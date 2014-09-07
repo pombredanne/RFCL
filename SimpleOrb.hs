@@ -2,31 +2,23 @@
 -- Trevor Pottinger
 -- Mon Sep  1 18:42:58 PDT 2014
 
-module SimpleOrb ( SimpleOrb
-                 , SimpleWeightedOrb
-                 , similarity
-                 , castToWeighted
-                 , castToRaw
-                 , add
-                 , mult
-                 , zero
-                 , weighted_zero
-                 , funcs
-                 ) where
+module Main where
 
---import Data.Map
---import Data.Tuple
 import System.Environment (getArgs)
 
 import qualified KMeans
 import qualified Simple
 import qualified Group
 
+-- (Time, Action, SourceIP, SourceID)
 type SimpleOrb = (Simple.SimpleInt, Group.GroupItem, Group.GroupItem, Group.GroupItem)
 type SimpleWeightedOrb = (Simple.SimpleWeightedInt, Group.GroupWeightedItem, Group.GroupWeightedItem, Group.GroupWeightedItem)
 
 instance KMeans.Sample SimpleOrb
 instance KMeans.WeightedSample SimpleWeightedOrb
+
+-- Is there a better way to define all the functions? They're essentially
+--   mapped versions of what each individual type is...
 
 similarity :: SimpleOrb -> SimpleOrb -> KMeans.Similarity
 similarity a b = 
@@ -73,10 +65,11 @@ parseLine s =
 -- map (read :: String -> Int)
 
 main = do
-  [file_name] <- getArgs
+  [file_name, iterations] <- getArgs
   file_contents <- readFile file_name
+  putStrLn $ "Running k-means on " ++ file_name ++ " for " ++ iterations ++ " iterations." 
   let samples = map parseLine $ lines file_contents
-      clusters = KMeans.soft_kmeans funcs samples 10
+      clusters = KMeans.soft_kmeans funcs samples (read iterations :: Int)
       sim_matrix = KMeans.similarity_matrix similarity samples clusters
       avgs = map KMeans.avg sim_matrix
       --std_devs = map KMeans.std_dev sim_matrix

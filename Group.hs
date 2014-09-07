@@ -15,8 +15,7 @@ module Group ( GroupItem
               ) where
 
 import Data.Map
-import Data.Tuple
-import System.Environment (getArgs)
+import Data.Tuple (swap)
 
 import qualified KMeans
 
@@ -26,6 +25,7 @@ type GroupWeightedItem = Map GroupItem Double
 instance KMeans.Sample GroupItem
 instance KMeans.WeightedSample GroupWeightedItem
 
+-- arbitrary decision, just thought it sounded nice
 phi = 1.618033988749895
 is_match = 1.0 
 not_a_match = 1.0 / phi
@@ -67,8 +67,3 @@ funcs = (similarity, castToWeighted, castToRaw, (.+), (.*), zero, weighted_zero)
 -- getMatchSimilarity :: Similarity -> Similarity -> (GroupItem -> GroupItem -> KMeans.Similarity)
 -- getMatrixSimilarity :: Map GroupItem (Map GroupItem Int) -> (GroupItem -> GroupItem -> KMeans.Similarity)
 -- getSparseMatrixSimilarity :: Map GroupItem (Map GroupItem Int) -> GroupItem -> GroupItem -> (GroupItem -> GroupItem -> KMeans.Similarity)
-
-main = do
-  [file_name] <- getArgs
-  file_contents <- readFile file_name
-  print $ KMeans.soft_kmeans funcs (lines file_contents) 10

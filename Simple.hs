@@ -12,10 +12,8 @@ module Simple ( SimpleInt
               , zero
               , weighted_zero
               , funcs
+              , logSimilarity
               ) where
-
--- import System.IO
-import System.Environment (getArgs)
 
 import qualified KMeans
 
@@ -25,14 +23,12 @@ type SimpleWeightedInt = Double
 instance KMeans.Sample SimpleInt
 instance KMeans.WeightedSample SimpleWeightedInt
 
---distance a b = abs $ fromIntegral $ a - b
-distance a b = log $ 1 + (abs $ fromIntegral $ a - b)
+logDistance a b = log $ 1 + (abs $ fromIntegral $ a - b)
 
---instance KMeans.Sample SimpleInt --where
+logSimilarity e a b = exp $ e * logDistance a b
+
 similarity :: SimpleInt -> SimpleInt -> KMeans.Similarity
---similarity a b = exp $ -1/(2^25) * distance a b
-similarity a b = exp $ -1/(2^20) * distance a b
---similarity a b = exp $ -(log $ abs $ fromIntegral $ a - b)
+similarity = logSimilarity (-1/(2^20))
 
 castToWeighted :: SimpleInt -> SimpleWeightedInt
 castToWeighted sample = fromIntegral sample
@@ -40,7 +36,6 @@ castToWeighted sample = fromIntegral sample
 zero :: SimpleInt
 zero = 0
 
---instance KMeans.WeightedSample SimpleWeightedInt --where
 (.+) :: SimpleWeightedInt -> SimpleWeightedInt -> SimpleWeightedInt
 (.+) a b = a + b
 (.*) :: KMeans.Weight -> SimpleWeightedInt -> SimpleWeightedInt
@@ -62,9 +57,3 @@ funcs = (similarity, castToWeighted, castToRaw, (.+), (.*), zero, weighted_zero)
 -- TODO for more flexibility
 -- getSimilarity :: SimpleInt -> SimpleInt -> (SimpleInt -> SimpleInt -> KMeans.Similarity)
 -- getDistSimilarity :: SimpleInt -> SimpleInt -> (SimpleInt -> SimpleInt -> KMeans.Similarity)
-
-main = do
-  [file_name] <- getArgs
-  file_contents <- readFile file_name
-  --times = lines file_contents
-  print $ KMeans.soft_kmeans funcs (map (read :: String -> Int) $ lines file_contents) 20

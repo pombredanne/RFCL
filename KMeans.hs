@@ -21,10 +21,8 @@ module KMeans ( Sample(..)
               ) where
 
 -- Standard imports
--- import System.IO
-import System.Environment (getArgs)
 import Control.Exception (assert)
-import System.Random (mkStdGen, next, random)
+import System.Random (mkStdGen)
 
 -- Third party packages
 -- random-shuffle
@@ -40,19 +38,17 @@ import System.Random.Shuffle (shuffle')
 -- point_query_count :: [Sample] -> Sample -> Similarity -> Int
 -- filter_point_query :: [Sample] -> Sample -> Similarity -> [Sample]
 
+-- TODO repa versions
+
 type Similarity = Double
 type Weight = Double
 
-class Sample a --where
-  --similarity :: Sample a => a -> a -> Similarity
-  --castToWeighted :: Sample a => a -> WeightedSample a
-  --zero :: a
+-- TODO how can I define functions for these typeclasses?
+--   otherwise I have these ugly `funcs`:
+--   (similarity, castToWeighted, castToRaw, (.+), (.*), zero, weighted_zero)
+class Sample a 
 
-class WeightedSample a --where
-  --castRaw :: WeightedSample a => a -> Sample a
-  --(.+) :: a -> a -> a
-  --(.*) :: Weight -> a -> a
-  --weighted_zero :: a
+class WeightedSample a 
 
 avg :: [Similarity] -> Similarity
 avg sims =
@@ -71,11 +67,7 @@ pairF :: (a -> b -> c) -> (a, b) -> c
 pairF f p =
   (fst p) `f` (snd p)
 
--- TODO fix funcs
--- funcs = (similarity, castToWeighted, castToRaw, (.+), (.*), zero, weighted_zero)
-
---soft_kmeans :: [Sample a] -> Int -> [Sample a]
---soft_kmeans :: [a] -> Int -> [a]
+-- desired: soft_kmeans :: [Sample a] -> Int -> [Sample a]
 soft_kmeans funcs samples k = 
   let (similarity, castToWeighted, castToRaw, (.+), (.*), zero, weighted_zero) = funcs
   in assert (k > 0 && length samples > 0)
@@ -111,8 +103,6 @@ avg_similarity similarity samplesA samplesB =
     (let len = length samplesA
      in (sum (map (pairF similarity) $ zip samplesA samplesB)) / (fromIntegral len))
 
--- TODO repa versions
-
 -- similarity_matrix :: (Sample a -> Sample a -> Similarity) -> [Sample a] -> [Sample a] -> [[Similarity]]
 similarity_matrix :: (a -> a -> Similarity) -> [a] -> [a] -> [[Similarity]]
 similarity_matrix similarity samples centroids =
@@ -135,6 +125,8 @@ derive_centers funcs samples sim_matrix =
                new_weighted_centroids = map (foldl (.+) weighted_zero) weighted_samples
            in map castToRaw new_weighted_centroids
 
+-- this is an optimization to avoid having to do division after reducing a bunch of 
+--   weighted samples
 weighted_similarity :: [[Similarity]] -> [[Weight]]
 weighted_similarity sim_matrix = 
   let div_sum (total_similarity, sim_vec) = map (\sim -> sim / total_similarity) sim_vec
